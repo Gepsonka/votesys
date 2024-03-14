@@ -49,8 +49,10 @@ def fill():
                 [str(random.randint(0, 9)) for _ in range(15)]
             )
 
-            voters[j]["privateKeyRSA"] = rsa_key.publickey().export_key().hex()
-            voters[j]["publicKeyRSA"] = rsa_key.export_key().hex()
+            voters[j]["privateKeyRSA"] = (
+                rsa_key.publickey().export_key().decode("utf-8")
+            )
+            voters[j]["publicKeyRSA"] = rsa_key.export_key().decode("utf-8")
 
         cursor.executemany(
             """

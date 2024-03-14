@@ -2,7 +2,7 @@ from datetime import datetime
 
 VOTE_TIME_INTERVAL = [datetime(2024, 3, 8, 7, 0), datetime(2024, 3, 8, 19, 0)]
 
-DB_PATH = "../../../votesys.db"
+DB_PATH = "votesys.db"
 
 RSA_KEY_SIZE = 2048
 
