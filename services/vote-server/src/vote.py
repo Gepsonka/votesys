@@ -10,6 +10,8 @@ from utils.vote import (
     fetch_random_voters,
     calculate_signautre,
     get_voter_by_id,
+    submit_vote,
+    voter_voted,
 )
 from utils.db import DB
 from Crypto.PublicKey import RSA
@@ -26,17 +28,23 @@ def get_voting_time_interval():
 
 
 @vote.route("/submit-vote", methods=["POST"])
-def submit_vote():
+def submit_vote_endpoint():
     database = DB()
     data = request.json
     voter_id = data["voter_id"]
+
     try:
         voter = get_voter_by_id(database.cursor, voter_id)
+        print("voter: ", voter)
         voter_private_key = voter[6]
-        key = RSA.importKey(voter_private_key)
-        print("Voter private key: ", key.d)
     except ValueError as e:
         return abort(404, description="Voter with id does not exist")
+
+    if voter[8] == 1:
+        return {
+            "status": "failed",
+            "reason": "Voter has already voted",
+        }, 400
 
     random_voters = fetch_random_voters(database.cursor, 4)
 
@@ -47,27 +55,18 @@ def submit_vote():
 
     public_keys = [key.publickey() for key in RSA_keys]
 
-    if data["message"] == "DEM" or data["messsage"] == "REP":
-        signature = calculate_signautre(public_keys, data["message"])
-    else:
-        return abort(400, description="Invalid message (possiblities are DEM/REP)")
-
     # shuffle list so that the order of the public keys is not known
     random.shuffle(public_keys)
 
-    # Add vote to database
-    database.cursor.execute(
-        "INSERT INTO vote (vote, RSA_signature, signer1_public_RSA_key, signer2_public_RSA_key, signer3_public_RSA_key, signer4_public_RSA_key, signer5_public_RSA_key) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (
-            data["message"],
-            signature,
-            public_keys[0],
-            public_keys[1],
-            public_keys[2],
-            public_keys[3],
-            public_keys[4],
-        ),
-    )
-    database.conn.commit()
+    if data["message"] == "DEM" or data["messsage"] == "REP":
+        signature, _ = calculate_signautre(RSA_keys, data["message"])
+    else:
+        return abort(400, description="Invalid message (possiblities are DEM/REP)")
+
+    submit_vote(database, public_keys, signature, data["message"])
+
+    voter_voted(database, voter_id)
+
+    del database
 
     return {"status": "success"}
