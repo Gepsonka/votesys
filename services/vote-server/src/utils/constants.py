@@ -1,5 +1,7 @@
 from datetime import datetime
 
+RING_SIZE = 5
+
 VOTE_TIME_INTERVAL = [datetime(2024, 3, 8, 7, 0), datetime(2024, 3, 8, 19, 0)]
 
 DB_PATH = "votesys.db"

@@ -4,7 +4,6 @@ from datetime import datetime
 from utils.ring import Ring
 import sqlite3
 import os
-from utils.constants import DB_PATH, RSA_KEY_SIZE
 from utils.vote import (
     convert_keys_into_RsaKey_objects,
     fetch_random_voters,
@@ -25,6 +24,18 @@ def get_voting_time_interval():
         "vote_start": os.environ.get("VOTE_START"),
         "vote_end": os.environ.get("VOTE_END"),
     }
+
+
+@vote.route("/<voterId>", methods=["GET"])
+def check_if_voter_exists(voterId):
+    database = DB()
+    voter = get_voter_by_id(database.cursor, voterId)
+    if voter is None:
+        del database
+        return {"status": "failed", "reason": "Voter with id does not exist"}, 404
+    else:
+        del database
+        return {"status": "success"}, 200
 
 
 @vote.route("/submit-vote", methods=["POST"])

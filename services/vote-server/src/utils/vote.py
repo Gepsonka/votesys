@@ -1,5 +1,6 @@
 from .ring import Ring
 from Crypto.PublicKey import RSA
+from utils.constants import RING_SIZE
 
 
 def fetch_random_voters(cursor, count: int):
@@ -65,4 +66,10 @@ def verify_vote(db, voteId):
     vote = db.cursor.execute("SELECT * FROM vote WHERE id=?", (voteId,)).fetchone()
 
     if vote is None:
-        return False
+        return None
+
+    public_keys = [RSA.importKey(key) for key in vote[7:12]]
+    signature = [int(sig) for sig in vote[1:7]]
+
+    ring = Ring(public_keys)
+    return ring.verify_message(vote[1], signature, public_keys, RING_SIZE)
