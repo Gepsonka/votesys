@@ -1,8 +1,5 @@
 import random
 from flask import Blueprint, abort, request
-from datetime import datetime
-from utils.ring import Ring
-import sqlite3
 import os
 from utils.vote import (
     convert_keys_into_RsaKey_objects,
@@ -32,7 +29,10 @@ def check_if_voter_exists(voterId):
     voter = get_voter_by_id(database.cursor, voterId)
     if voter is None:
         del database
-        return {"status": "failed", "reason": "Voter with id does not exist"}, 404
+        return {
+            "code": "voter_id_not_found",
+            "reason": "Voter with id does not exist",
+        }, 404
     else:
         del database
         return {"status": "success"}, 200
@@ -49,12 +49,15 @@ def submit_vote_endpoint():
         print("voter: ", voter)
         voter_private_key = voter[6]
     except ValueError as e:
-        return abort(404, description="Voter with id does not exist")
+        return {
+            "code": "voter_id_not_found",
+            "message": "Voter with id does not exist",
+        }, 404
 
     if voter[8] == 1:
         return {
-            "status": "failed",
-            "reason": "Voter has already voted",
+            "code": "voter_already_voted",
+            "message": "Voter has already voted",
         }, 400
 
     random_voters = fetch_random_voters(database.cursor, 4)
@@ -66,13 +69,13 @@ def submit_vote_endpoint():
 
     public_keys = [key.publickey() for key in RSA_keys]
 
-    # shuffle list so that the order of the public keys is not known
-    random.shuffle(public_keys)
-
     if data["message"] == "DEM" or data["messsage"] == "REP":
         signature, _ = calculate_signautre(RSA_keys, data["message"])
     else:
-        return abort(400, description="Invalid message (possiblities are DEM/REP)")
+        return {
+            "code": "invalid_message",
+            "message": "Possible messages are 'DEM' or 'REP'",
+        }, 400
 
     submit_vote(database, public_keys, signature, data["message"])
 

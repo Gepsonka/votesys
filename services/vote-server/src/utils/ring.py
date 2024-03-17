@@ -3,55 +3,13 @@ import hashlib
 import random
 import Crypto.PublicKey.RSA
 import functools
-
-
-# def _permut(m):
-#     msg = m.encode("utf-8")
-#     return int(hashlib.sha1(msg).hexdigest(), 16)
-
-
-# def _E(x, p):
-#     msg = f"{x}{p}".encode("utf-8")
-#     return int(hashlib.sha1(msg).hexdigest(), 16)
-
-
-# def _g(x, e, n, RSA_key_size):
-#     q, r = divmod(x, n)
-#     if ((q + 1) * n) <= ((1 << RSA_key_size) - 1):
-#         result = q * n + pow(r, e, n)
-#     else:
-#         result = x
-#     return result
-
-
-# def sign_message_with_ring(rsa_keys, RSA_key_size, message, signer_index):
-#     ring_size = len(rsa_keys)
-#     q = 1 << (RSA_key_size - 1)
-
-#     p = _permut(message)
-#     s = [None] * ring_size
-#     u = random.randint(0, q)
-#     c = v = _E(u, p)
-
-#     first_range = list(range(signer_index + 1, ring_size))
-#     second_range = list(range(signer_index))
-#     whole_range = first_range + second_range
-
-#     for i in whole_range:
-#         s[i] = random.randint(0, q)
-#         e = _g(s[i], rsa_keys[i].e, rsa_keys[i].n, RSA_key_size)
-#         v = _E(v ^ e, p)
-#         if (i + 1) % ring_size == 0:
-#             c = v
-
-#     s[signer_index] = _g(v ^ u, rsa_keys[signer_index].d, rsa_keys[signer_index].n)
-#     return [c] + s
+from utils import constants
 
 
 class Ring:
     """RSA implementation."""
 
-    def __init__(self, k, L: int = 2048) -> None:
+    def __init__(self, k, L: int = constants.RSA_KEY_SIZE) -> None:
         self.k = k
         self.l = L
         self.n = len(k)

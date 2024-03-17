@@ -1,3 +1,4 @@
+import random
 from .ring import Ring
 from Crypto.PublicKey import RSA
 from utils.constants import RING_SIZE
@@ -9,12 +10,14 @@ def fetch_random_voters(cursor, count: int):
     ).fetchall()
 
 
-def calculate_signautre(public_keys, message: str):
-    ring = Ring(public_keys)
-    for i in range(len(public_keys)):
+def calculate_signautre(private_keys, message: str):
+    # shuffle list so that the order of the public keys is not known
+    random.shuffle(private_keys)
+    ring = Ring(private_keys)
+    for i in range(len(private_keys)):
         sig = ring.sign_message(message, i)
 
-    return sig, public_keys
+    return sig, private_keys
 
 
 def get_voter_by_id(cursor, voter_id: str):
