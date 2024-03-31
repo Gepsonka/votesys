@@ -13,7 +13,7 @@ class ElectionSimulation(object):
         vote_distribution: float,
         voting_participation_rate: float = 63.7,
     ):
-        self.database = DB()
+        self.database = DB("../votesys.db")
         self.voting_participation_rate = voting_participation_rate
         self.voted_for_winner_rate = vote_distribution
         self.winner_party = self._get_random_winner_party()
@@ -26,8 +26,9 @@ class ElectionSimulation(object):
             return "REP"
         return "DEM"
 
-    def _does_voter_votes(self):
-        """The 2020 US election had a voter participation rate of 63.7%. The sim follows this distribution"""
+    def _voter_votes(self):
+        """The 2020 US election had a voter participation rate of 63.7%.
+        The sim follows this distribution if it is not specifies otherwise"""
         random_num = random.random()
         if random_num <= self.voting_participation_rate / 100:
             return True
@@ -51,7 +52,7 @@ class ElectionSimulation(object):
             [random_voter[6] for random_voter in random_signers] + [voter[6]],
         )
 
-        signature, _ = vote.calculate_signautre()
+        signature, _ = vote.calculate_signautre(RSA_keys, voted_for_party)
 
         public_keys = [key.publickey() for key in RSA_keys]
 
@@ -77,7 +78,7 @@ class ElectionSimulation(object):
             random_voters = vote.fetch_random_voters(
                 self.database.cursor, constants.RING_SIZE
             )
-            if self._does_voter_votes():
+            if self._voter_votes():
                 self._simulate_vote(voter, random_voters)
 
         del self.database
@@ -93,7 +94,7 @@ class ElectionSimulation(object):
 
 class CreateElectionResultReport(object):
     def __init__(self):
-        self.database = DB()
+        self.database = DB("../votesys.db")
 
     def _get_vote_count(self):
         return self.database.cursor.execute("SELECT count(*) FROM Vote").fetchone()[0]
@@ -105,10 +106,10 @@ class CreateElectionResultReport(object):
         return {
             "DEM": self.database.cursor.execute(
                 "select count(*) from Vote where vote='DEM'"
-            ),
+            ).fetchone()[0],
             "REP": self.database.cursor.execute(
                 "select count(*) from Vote where vote='REP'"
-            ),
+            ).fetchone()[0],
         }
 
     def _get_voting_participation_rate(self):
