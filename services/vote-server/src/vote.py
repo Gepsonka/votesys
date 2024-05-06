@@ -1,14 +1,7 @@
 import random
 from flask import Blueprint, abort, request
 import os
-from utils.vote import (
-    convert_keys_into_RsaKey_objects,
-    fetch_random_voters,
-    calculate_signautre,
-    get_voter_by_id,
-    submit_vote,
-    voter_voted,
-)
+from utils.vote import *
 from utils.db import DB
 from Crypto.PublicKey import RSA
 
@@ -17,16 +10,28 @@ vote = Blueprint("vote", __name__)
 
 @vote.route("/get-voting-interval", methods=["GET"])
 def get_voting_time_interval():
+    print("ide belépett")
     return {
         "vote_start": os.environ.get("VOTE_START"),
         "vote_end": os.environ.get("VOTE_END"),
     }
 
 
+@vote.route("/get-votes", methods=["GET"])
+def get_number_of_votes():
+    database = DB()
+    vote_dict = get_vote_count(database)
+
+    del database
+    return vote_dict, 200
+
+
 @vote.route("/<voterId>", methods=["GET"])
 def check_if_voter_exists(voterId):
     database = DB()
     voter = get_voter_by_id(database.cursor, voterId)
+    print("itt van")
+    print(voter)
     if voter is None:
         del database
         return {
@@ -36,6 +41,13 @@ def check_if_voter_exists(voterId):
     else:
         del database
         return {"status": "success"}, 200
+        
+@vote.route("/hasVoted/<voterId>", methods=["GET"])
+def check_if_voter_has_already_voted(voterId):
+    database = DB()
+    already_voted = has_voter_already_voted(database.cursor, voterId)
+    
+    return str(already_voted == 1)
 
 
 @vote.route("/submit-vote", methods=["POST"])
@@ -69,7 +81,7 @@ def submit_vote_endpoint():
 
     public_keys = [key.publickey() for key in RSA_keys]
 
-    if data["message"] == "DEM" or data["messsage"] == "REP":
+    if data["message"] == "DEM" or data["message"] == "REP":
         signature, _ = calculate_signautre(RSA_keys, data["message"])
     else:
         return {

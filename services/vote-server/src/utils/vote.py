@@ -29,6 +29,16 @@ def get_voter_by_id(cursor, voter_id: str):
         raise ValueError("Voter with id does not exist")
 
     return voter
+    
+def has_voter_already_voted(cursor, voter_id: str):
+    voter = cursor.execute(
+        "SELECT * FROM Voter WHERE idNumber=?", (voter_id,)
+    ).fetchone()
+    if voter is None:
+        raise ValueError("Voter with id does not exist")
+    
+    return voter[-1]
+    
 
 
 def convert_keys_into_RsaKey_objects(private_keys):
@@ -58,6 +68,15 @@ def submit_vote(db, public_keys, signature, message):
         ),
     )
     db.conn.commit()
+
+def get_vote_count(db):
+    votes = db.cursor.execute("SELECT vote, COUNT(*) FROM vote GROUP BY vote").fetchall()
+    vote_dict = {}
+    for vote in votes:
+        vote_dict[vote[0]] = vote[1]
+
+    return vote_dict
+    
 
 
 def voter_voted(db, voter_id):
